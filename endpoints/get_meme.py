@@ -11,6 +11,7 @@ class GetMeme(Endpoint):
         print(self.url)
         return self.response  # если потребуется вернуть данные json
 
+
     @allure.step('Get one meme')
     def get_meme(self, meme_id, headers=None):
         self.response = requests.get(f'{self.url}/{meme_id}', headers=headers)
@@ -18,9 +19,6 @@ class GetMeme(Endpoint):
         print(f'GET URL: {self.url}/{meme_id}')
         return self.response
 
-    @allure.step('Check status code')
-    def check_status_code(self, expected_status=200):
-        assert self.response.status_code == expected_status
 
     @allure.step('Check id meme for test_get_one_meme')
     def check_meme_id(self, expected_id):
