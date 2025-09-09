@@ -11,9 +11,6 @@ class DeleteMeme(Endpoint):
         print(f'DELETE URL: {self.url}/{meme_id}')
         return self.response
 
-    @allure.step('Check status code')
-    def check_status_code(self, expected_status=200):
-        assert self.response.status_code == expected_status
 
     @allure.step('Check id meme for test_delete_meme')
     def check_meme_id(self, expected_id):
