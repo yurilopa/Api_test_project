@@ -10,6 +10,7 @@ from endpoints.create_meme import (CreateMeme)
 from endpoints.update_meme import (UpdateMeme)
 from endpoints.get_meme import (GetMeme)
 from endpoints.delete_meme import (DeleteMeme)
+from endpoints.auth_calss import (GetToken)
 
 
 # Создаем экземпляр класса CreateMeme
@@ -35,6 +36,12 @@ def update_meme_endpoint():
 @pytest.fixture()  # инициализация create_post_endpoint() исп в test
 def delete_meme_endpoint():
     return DeleteMeme()
+
+
+@pytest.fixture()  # инициализация create_post_endpoint() исп в test
+def create_token():
+    return GetToken()
+
 
 """Создает новый токен по имени отдаем его в тесты в папке test_dir"""
 @pytest.fixture(scope="session")
@@ -73,9 +80,6 @@ def new_meme_id(new_token):
         'Authorization': new_token
     }
     response = requests.post('http://memesapi.course.qa-practice.com/meme', json=body, headers=headers)
-    assert response.status_code == 200, f'Failed to create meme: {response.text}'
-    meme_id = response.json()['id']  # тут в self.post_id будет хранить ответ в виде id из json
-    print(f'Created meme with ID: {meme_id}')
     with allure.step(f'Check status code for test test_create_three_new_meme_id is: {response.status_code}'):
         assert response.status_code == 200
     meme_id = response.json()['id']  # тут в self.post_id будет хранить ответ в виде id из json

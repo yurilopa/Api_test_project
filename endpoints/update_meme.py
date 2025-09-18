@@ -14,7 +14,7 @@ class UpdateMeme(Endpoint):
     @allure.step('Updating meme with PUT request')
     def update_meme(self, new_meme_id, body, headers):
         self.response = requests.put(
-            f'{self.url}/{new_meme_id}',
+            f'{self.url}/meme/{new_meme_id}',
             headers=headers,
             json=body
         )
@@ -145,18 +145,17 @@ class UpdateMeme(Endpoint):
         print(f'Negative test - Response status: {self.response.status_code}')
 
 
-        # Дополнительный метод для комплексной проверки обновления
-        @allure.step('Verify meme update with original comparison')
-        def verify_update_with_comparison(self, meme_id, headers, expected_changes):
-            """Получает оригинальный мем, проверяет что обновление произошло корректно"""
-            # Получаем обновленный мем через GetMeme
-            updated_meme = self.get_existing_meme_data(meme_id, headers)
+    # Дополнительный метод для комплексной проверки обновления
+    @allure.step('Verify meme update with original comparison')
+    def verify_update_with_comparison(self, meme_id, headers, expected_changes):
+        """Получает оригинальный мем, проверяет что обновление произошло корректно"""
+        # Получаем обновленный мем через GetMeme
+        updated_meme = self.get_existing_meme_data(meme_id, headers)
 
-
-            # Проверяем каждое ожидаемое изменение
-            for field, expected_value in expected_changes.items():
-                actual_value = updated_meme.get(field)
-                assert actual_value == expected_value, \
-                    f"Field '{field}' was not updated correctly. Expected: {expected_value}, Got: {actual_value}"
-            print(f"Meme {meme_id} successfully updated with changes: {expected_changes}")
-            return updated_meme
+        # Проверяем каждое ожидаемое изменение
+        for field, expected_value in expected_changes.items():
+            actual_value = updated_meme.get(field)
+            assert actual_value == expected_value, \
+                f"Field '{field}' was not updated correctly. Expected: {expected_value}, Got: {actual_value}"
+        print(f"Meme {meme_id} successfully updated with changes: {expected_changes}")
+        return updated_meme
