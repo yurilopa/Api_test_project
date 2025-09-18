@@ -6,11 +6,7 @@ from test_api_fin_project.endpoints.endpoint import Endpoint
 class CreateMeme(Endpoint):
     @allure.step('Creating meme')
     def create_new_meme(self, body, headers):
-        self.response = requests.post(
-            self.url,
-            json=body,
-            headers=headers
-        )
+        self.response = requests.post(f'{self.url}/meme', json=body, headers=headers)
         print(self.response, self.url)
         self.json = self.response.json()
         return self.response  # если потребуется вернуть данные json

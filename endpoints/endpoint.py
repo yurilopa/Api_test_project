@@ -1,10 +1,9 @@
 import allure
-import requests
 
 
 class Endpoint:
     def __init__(self):
-        self.url = "http://memesapi.course.qa-practice.com/meme"  # Атрибут экземпляра
+        self.url = "http://memesapi.course.qa-practice.com"  # meme"  # Атрибут экземпляра
         self.headers = {'Content-Type': 'application/json'}       # Атрибут экземпляра
         self.response = None
         self.json = None
