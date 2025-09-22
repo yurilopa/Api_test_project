@@ -17,6 +17,9 @@ def test_create_token(create_token):
     print(f'Response text: {response.text}')
     # Проверка успешности запроса
     create_token.check_response_status_is_200()
+    token = create_token.check_token_in_response()
+    print(f'Token received: {token}')
+
 
 @allure.feature('Authorization')
 @allure.story('Get Authorization Token')
@@ -30,6 +33,8 @@ def test_create_token_with_name_int(create_token):
     print(f'Response text: {response.text}')
     # Проверка успешности запроса
     create_token.check_response_status_is_200()
+    token = create_token.check_token_in_response()
+    print(f'Token received: {token}')
 
 @allure.feature('Authorization')
 @allure.story('Get Authorization Token')
@@ -43,6 +48,8 @@ def test_create_token_with_one_sim_in_name(create_token):
     print(f'Response text: {response.text}')
     # Проверка успешности запроса
     create_token.check_response_status_is_200()
+    token = create_token.check_token_in_response()
+    print(f'Token received: {token}')
 
 
 # =============================================================================
@@ -62,6 +69,8 @@ def test_authorization_with_long_name(create_token):
     print(f'Response text: {response.text}')
     # Проверка успешности запроса
     create_token.check_response_status_is_200()
+    token = create_token.check_token_in_response()
+    print(f'Token received: {token}')
 
 @allure.feature('Authorization')
 @allure.story('Get Authorization Token')
@@ -75,6 +84,8 @@ def test_create_token_with_spec_characters(create_token):
     print(f'Response text: {response.text}')
     # Проверка успешности запроса
     create_token.check_response_status_is_200()
+    token = create_token.check_token_in_response()
+    print(f'Token received: {token}')
 
 @allure.feature('Authorization')
 @allure.story('Get Authorization Token')
@@ -88,12 +99,14 @@ def test_create_token_with_empty_name(create_token):
     print(f'Response text: {response.text}')
     # Проверка успешности запроса
     create_token.check_response_status_is_200()
+    token = create_token.check_token_in_response()
+    print(f'Token received: {token}')
 
 @allure.feature('Authorization')
 @allure.story('Get Authorization Token')
 @allure.title('Получение токена авторизации, пробел в имени')
 @pytest.mark.smoke
-def test_create_token_with_probel_name(create_token):
+def test_create_token_with_space_name(create_token):
     body = {"name": " "}
     headers = {'Content-Type': 'application/json'}
     response = create_token.create_new_token(body=body, headers=headers)
@@ -101,6 +114,9 @@ def test_create_token_with_probel_name(create_token):
     print(f'Response text: {response.text}')
     # Проверка успешности запроса
     create_token.check_response_status_is_200()
+    token = create_token.check_token_in_response()
+    print(f'Token received: {token}')
+
 
 # =============================================================================
 #NEGATIVE AUTHORIZATION TESTS
@@ -118,6 +134,7 @@ def test_create_token_with_empty_body(create_token):
     # Проверка успешности запроса
     create_token.check_bad_request_400()
 
+
 #NEGATIVE AUTHORIZATION TESTS (изменяем значение  в поле name)
 @allure.feature('Authorization')
 @allure.story('Get Authorization Token')
@@ -132,6 +149,7 @@ def test_create_token_where_name_nam(create_token):
     # Проверка успешности запроса
     create_token.check_bad_request_400()
 
+
 @allure.feature('Authorization')
 @allure.story('Get Authorization Token')
 @allure.title('Получение токена авторизации с цифрами в имени')
@@ -144,6 +162,7 @@ def test_create_token_where_name_int(create_token):
     print(f'Response text: {response.text}')
     # Проверка успешности запроса
     create_token.check_bad_request_400()
+
 
 @allure.feature('Authorization')
 @allure.story('Get Authorization Token')
@@ -158,6 +177,7 @@ def test_create_token_where_spec_name(create_token):
     # Проверка успешности запроса
     create_token.check_bad_request_400()
 
+
 @allure.feature('Authorization')
 @allure.story('Get Authorization Token')
 @allure.title('Успешное получение токена авторизации пусто в имени')
@@ -171,11 +191,12 @@ def test_create_token_where_empty_name(create_token):
     # Проверка успешности запроса
     create_token.check_bad_request_400()
 
+
 @allure.feature('Authorization')
 @allure.story('Get Authorization Token')
 @allure.title('Успешное получение токена авторизации пробел в имени')
 @pytest.mark.smoke
-def test_create_token_where_probel_in_name(create_token):
+def test_create_token_where_space_in_name(create_token):
     body = {" ": "name"}
     headers = {'Content-Type': 'application/json'}
     response = create_token.create_new_token(body=body, headers=headers)
@@ -183,6 +204,7 @@ def test_create_token_where_probel_in_name(create_token):
     print(f'Response text: {response.text}')
     # Проверка успешности запроса
     create_token.check_bad_request_400()
+
 
 """запрос, с неправильным Content-Type"""
 @allure.feature('Memes')
@@ -199,6 +221,7 @@ def test_put_meme_text_headers(create_token):  # get_meme_endpoint, update_meme_
         print(f'Response text: {response.text}')
         # Проверка успешности запроса
         create_token.check_bad_request_500()
+
 
 """запрос, с неправильным Content-Type"""
 @allure.feature('Memes')
