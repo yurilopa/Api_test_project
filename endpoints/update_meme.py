@@ -74,45 +74,35 @@ class UpdateMeme(Endpoint):
         assert self.json['info'] == expected_info, f"Info not updated correctly in meme {meme_id}"
 
 
-    # Далее методы для проверки граничных значений:
-    @allure.step('Check boundary test response status')
-    def check_boundary_status(self, expected_statuses=None):
-        if expected_statuses is None:
-            expected_statuses = [200, 400]
-        assert self.response.status_code in expected_statuses, f"Unexpected status: {self.response.status_code}"
+    @allure.step('Check test text')
+    def check_test_text(self, expected_text, test_type="text"):
+        assert self.json['text'] == expected_text, "text not saved"
         print(f'Response status: {self.response.status_code}')
+        # Дополнительное логирование в зависимости от типа теста
+        if test_type == "long_text":
+            print(f'Long text saved successfully! Length: {len(expected_text)} characters')
+        elif test_type == "empty_text":
+            print('Empty text saved successfully!')
+        elif test_type == "special_chars":
+            print('Special characters text saved successfully!')
+        else:
+            print(f'{test_type} text saved successfully!')
 
-
-    @allure.step('Check test long text')
-    def check_long_text(self, long_text):
-        assert self.json['text'] == long_text, "Long text not saved}"
-        print(f'Response status: {self.response.status_code}')
-
-
-    @allure.step('Check test empty text')
-    def check_empty_text(self, empty_text):
-        assert self.json['text'] == empty_text, "Empty text not saved}"
-        print(f'Response status: {self.response.status_code}')
-
-
-    @allure.step('Check test text with special charts')
-    def check_text_with_spec_charts(self, spec_text):
-        assert self.json['text'] == spec_text, "Long text not saved}"
-        print(f'Response status: {self.response.status_code}')
-
-
+    # Проверка обновления с большим кол-вом тегов:
     @allure.step('Check test with many tags')
     def check_test_with_many_tags(self, many_tags):
         assert self.json['tags'] == many_tags, "Many tags not saved"
         print(f'Response status: {self.response.status_code}')
 
 
+    # Проверка обновления с большим кол-вом info:
     @allure.step('Check test with many info')
     def check_test_with_many_info(self, many_info):
         assert self.json['info'] == many_info, "Many info not saved"
         print(f'Response status: {self.response.status_code}')
 
 
+    # Проверка обновления с пустыми данными в боди:
     @allure.step('Check test empty fields body')
     def check_test_with_empty_fields_body(self, empty_fields_body):
         """Проверяет обработку пустых полей"""
@@ -127,35 +117,3 @@ class UpdateMeme(Endpoint):
         response_text = self.response.text
         assert expected_text.lower() in response_text.lower(), \
             f'Expected "{expected_text}" in response, but got "{response_text}"'
-
-
-    @allure.step('Check response field value')
-    def check_response_field(self, field_name, expected_value):
-        response_data = self.response.json()
-        actual_value = response_data.get(field_name)
-        assert actual_value == expected_value, f'Expected {field_name}="{expected_value}", but got"{actual_value}"'
-
-
-    # Методы для проверки негативных значений:
-    @allure.step('Check negative test response status')
-    def check_negative_status(self, expected_status):
-        """Проверяет конкретный ожидаемый статус для негативного теста"""
-        assert self.response.status_code == expected_status, \
-            f"Expected status {expected_status}, but got {self.response.status_code}. Response: {self.response.text}"
-        print(f'Negative test - Response status: {self.response.status_code}')
-
-
-    # Дополнительный метод для комплексной проверки обновления
-    @allure.step('Verify meme update with original comparison')
-    def verify_update_with_comparison(self, meme_id, headers, expected_changes):
-        """Получает оригинальный мем, проверяет что обновление произошло корректно"""
-        # Получаем обновленный мем через GetMeme
-        updated_meme = self.get_existing_meme_data(meme_id, headers)
-
-        # Проверяем каждое ожидаемое изменение
-        for field, expected_value in expected_changes.items():
-            actual_value = updated_meme.get(field)
-            assert actual_value == expected_value, \
-                f"Field '{field}' was not updated correctly. Expected: {expected_value}, Got: {actual_value}"
-        print(f"Meme {meme_id} successfully updated with changes: {expected_changes}")
-        return updated_meme
