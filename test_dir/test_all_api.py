@@ -27,6 +27,7 @@ def test_get_all_memes(get_meme_endpoint, new_meme_id, new_token):
     headers = {'Authorization': new_token}
     get_meme_endpoint.get_meme(meme_id, headers)
     get_meme_endpoint.check_response_status_is_200()
+    get_meme_endpoint.check_meme_id(new_meme_id)
 
 
 """Получаем существующий мем по ID который создан в файле conftest.py лежащий в папке, на папку выше"""
@@ -61,7 +62,7 @@ def test_get_meme_non_existent_id(get_meme_endpoint, new_token):
         get_meme_endpoint.get_meme(fake_id, headers)
 
         # Проверки с allure шагами
-        get_meme_endpoint.check_bad_request_404()
+        get_meme_endpoint.check_not_found_404()
         print(f'Non existent id test - Status: {get_meme_endpoint.response.status_code}')
 
 
@@ -115,7 +116,7 @@ def test_get_meme_empty_token(get_meme_endpoint, new_meme_id):
         get_meme_endpoint.get_meme(meme_id, empty_auth_headers)
 
         # Проверки с allure шагами
-        get_meme_endpoint.check_bad_request_500()
+        get_meme_endpoint.check_bad_request_401()
         print(f'No token status test - Status: {get_meme_endpoint.response.status_code}')
 
 # =============================================================================
@@ -192,10 +193,11 @@ def test_change_text_only_meme(update_meme_endpoint, new_meme_id, new_token):
         meme_id = new_meme_id
         print('Тест обновления текстового поля мема через (PUT)')
         headers = {'Authorization': new_token, 'Content-Type': 'application/json'}
+        text = 'update text'
         # В теле запроса, меняем только текст
         body = {
             'id': new_meme_id,
-            'text': "update text",
+            'text': text,
             'url': 'https://opis-cdn.tinkoffjournal.ru/mercury/03-fav-memes-2025.jpg',
             "tags": ["updated", "test", "automation"],
             "info": {"colors": ["black", "white"], 'updated': True},
@@ -205,7 +207,7 @@ def test_change_text_only_meme(update_meme_endpoint, new_meme_id, new_token):
         update_meme_endpoint.update_meme(meme_id, body, headers)
         # Проверки с allure шагами
         update_meme_endpoint.check_response_status_is_200()
-        update_meme_endpoint.check_text_only_updated('update text', meme_id)
+        update_meme_endpoint.check_text_only_updated(text, meme_id)
 
 
 """Тест обновления URL через PUT"""
@@ -297,84 +299,35 @@ def test_change_info_only_meme(update_meme_endpoint, new_meme_id, new_token):
 # =============================================================================
 # PUT BOUNDARY TESTS
 # =============================================================================
-"""Тест PUT запроса с очень длинным текстом"""
+@pytest.mark.parametrize("text,test_name,expected_status", [
+    ("Very long text " * 100, "long_text", 200),
+    ("", "empty_text", 200),
+    ("!@#$%^&*()_+=~|{[]}'?/><`", "special_chars", 200),
+    ("Привет мир! 🚀", "unicode", 200),
+    ("'; DROP TABLE memes; --", "sql_injection", 200)
+])
 @allure.feature('Memes')
 @allure.story('Manipulate memes')
-@allure.title('PUT запрос с очень длинным текстом')
 @pytest.mark.medium
-def test_put_meme_long_text(update_meme_endpoint, new_meme_id, new_token):
-    print('PUT запрос с очень длинным текстом')
-    with allure.step('Test PUT with long_text'):
+def test_put_meme_check_text(update_meme_endpoint, new_meme_id, new_token, text, test_name, expected_status):
+    print(f'PUT запрос с {test_name}')
+    allure.dynamic.title(f'PUT запрос с {test_name}')
+    with allure.step(f'Test PUT with {test_name}'):
         meme_id = new_meme_id
         headers = {'Authorization': new_token, 'Content-Type': 'application/json'}
-        long_text = "Very long text " * 100  # Очень длинный текст
         body = {
             'id': meme_id,
-            'text': long_text,
+            'text': text,
             'url': 'https://opis-cdn.tinkoffjournal.ru/mercury/03-fav-memes-2025.jpg',
-            "tags": ["long", "text", "boundary"],
-            "info": {"text_length": len(long_text)},
-            'updated_by': 'Long Text Tester'
+            "tags": ["test", "text", "boundary"],
+            "info": {"text with spec text": len(text)},
+            'updated_by': 'Tester'
         }
         # Обновляем мем
         update_meme_endpoint.update_meme(meme_id, body, headers)
         # Проверки с allure шагами
-        update_meme_endpoint.check_boundary_status([200, 400])
-        update_meme_endpoint.check_long_text(long_text)
-        print(f'Test PUT with long text - Status: {update_meme_endpoint.response.status_code}')
-
-
-"""Тест PUT запрос с пустым текстом"""
-@allure.feature('Memes')
-@allure.story('Manipulate memes')
-@allure.title('PUT запрос с пустым текстом')
-@pytest.mark.medium
-def test_put_meme_empty_text(update_meme_endpoint, new_meme_id, new_token):
-    print('PUT запрос с пустым текстом')
-    with allure.step('Test PUT with empty_text'):
-        meme_id = new_meme_id
-        headers = {'Authorization': new_token, 'Content-Type': 'application/json'}
-        empty_text = ""  # Пустой текст
-        body = {
-            'id': meme_id,
-            'text': empty_text,
-            'url': 'https://opis-cdn.tinkoffjournal.ru/mercury/03-fav-memes-2025.jpg',
-            "tags": ["empty", "text", "boundary"],
-            "info": {"empty text": (empty_text)},
-            'updated_by': 'Empty Text Tester'
-        }
-        # Обновляем мем
-        update_meme_endpoint.update_meme(meme_id, body, headers)
-        # Проверки с allure шагами
-        update_meme_endpoint.check_boundary_status([200, 400])
-        update_meme_endpoint.check_long_text(empty_text)
-        print(f'Test PUT with empty text - Status: {update_meme_endpoint.response.status_code}')
-
-
-"""Тест PUT запрос со спец символы в тексте"""
-@allure.feature('Memes')
-@allure.story('Manipulate memes')
-@allure.title('PUT запрос со спец символами в тексте')
-@pytest.mark.medium
-def test_put_meme_spec_text(update_meme_endpoint, new_meme_id, new_token):
-    print('PUT запрос со спец символами в тексте')
-    with allure.step('Test PUT with spec_text'):
-        meme_id = new_meme_id
-        headers = {'Authorization': new_token, 'Content-Type': 'application/json'}
-        spec_text = "!@#$%^&*()_+=~|{[]}'?/><`"  # текст с спец символами
-        body = {
-            'id': meme_id,
-            'text': spec_text,
-            'url': 'https://opis-cdn.tinkoffjournal.ru/mercury/03-fav-memes-2025.jpg',
-            "tags": ["spec", "text", "boundary"],
-            "info": {"text with spec text": (spec_text)},
-            'updated_by': 'Spec Text Tester'
-        }
-        # Обновляем мем
-        update_meme_endpoint.update_meme(meme_id, body, headers)
-        # Проверки с allure шагами
-        update_meme_endpoint.check_boundary_status([200, 400])
-        update_meme_endpoint.check_long_text(spec_text)
+        update_meme_endpoint.check_response_status_is_200()
+        update_meme_endpoint.check_test_text(text, test_name)
         print(f'Test PUT with spec text - Status: {update_meme_endpoint.response.status_code}')
 
 
@@ -400,7 +353,7 @@ def test_put_meme_many_tags(update_meme_endpoint, new_meme_id, new_token):
         # Обновляем мем
         update_meme_endpoint.update_meme(meme_id, body, headers)
         # Проверки с allure шагами
-        update_meme_endpoint.check_boundary_status([200, 400])
+        update_meme_endpoint.check_response_status_is_200()
         update_meme_endpoint.check_test_with_many_tags(many_tags)
         print(f'Test PUT with many tags - Status: {update_meme_endpoint.response.status_code}')
 
@@ -428,7 +381,7 @@ def test_put_meme_many_info(update_meme_endpoint, new_meme_id, new_token):
         # Обновляем мем
         update_meme_endpoint.update_meme(meme_id, body, headers)
         # Проверки с allure шагами
-        update_meme_endpoint.check_boundary_status([200, 400])
+        update_meme_endpoint.check_response_status_is_200()
         update_meme_endpoint.check_test_with_many_info(many_info)
         print(f'Test PUT with many_info - Status: {update_meme_endpoint.response.status_code}')
 
@@ -454,7 +407,8 @@ def test_put_meme_text_headers(update_meme_endpoint, new_meme_id, new_token):
         # Обновляем мем
         update_meme_endpoint.update_meme(meme_id, body, headers)
         # Проверки с allure шагами
-        print(f'Testing with empty authorization token - Status: {update_meme_endpoint.response.status_code}')
+        update_meme_endpoint.check_bad_request_400()
+        print(f'запрос, с Content-Type: text/plain - Status: {update_meme_endpoint.response.status_code}')
 
 
 """Тест PUT запрос, с неправильным Content-Type"""
@@ -478,7 +432,8 @@ def test_put_meme_multipart_headers(update_meme_endpoint, new_meme_id, new_token
         # Обновляем мем
         update_meme_endpoint.update_meme(meme_id, body, headers)
         # Проверки с allure шагами
-        print(f'Testing with empty authorization token - Status: {update_meme_endpoint.response.status_code}')
+        update_meme_endpoint.check_bad_request_400()
+        print(f'запрос, с Content-Type: multipart/form-data - Status: {update_meme_endpoint.response.status_code}')
 
 
 """Тест PUT запрос, с пустыми обязательными полями"""
@@ -502,7 +457,7 @@ def test_put_meme_empty_body(update_meme_endpoint, new_meme_id, new_token):
         # Обновляем мем
         update_meme_endpoint.update_meme(meme_id, body, headers)
         # Проверки с allure шагами. Может быть принято или отклонено - зависит от бизнес-логики
-        update_meme_endpoint.check_boundary_status([200, 400])
+        update_meme_endpoint.check_response_status_is_200()
         update_meme_endpoint.check_test_with_empty_fields_body(body)
         print(f'Empty fields test - Status: {update_meme_endpoint.response.status_code}')
 
@@ -531,7 +486,7 @@ def test_put_meme_with_non_existent_id(update_meme_endpoint, new_meme_id, new_to
         # Обновляем мем с не существующим id
         update_meme_endpoint.update_meme(fake_id, body, headers)
         # Проверки с allure шагами
-        update_meme_endpoint.check_bad_request_404()
+        update_meme_endpoint.check_not_found_404()
         print(f'Non existent id test - Status: {update_meme_endpoint.response.status_code}')
 
 
@@ -557,7 +512,6 @@ def test_put_meme_with_bad_token(update_meme_endpoint, new_meme_id, new_token, m
         update_meme_endpoint.update_meme(new_meme_id, body, headers)
         # Проверки с allure шагами
         update_meme_endpoint.check_bad_request_401()
-        update_meme_endpoint.check_response_text('Unauthorized')
         print(f'Invalid token status test - Status: {update_meme_endpoint.response.status_code}')
 
 
@@ -581,6 +535,7 @@ def test_put_meme_with_empty_token(update_meme_endpoint, new_meme_id, new_token,
         }
         update_meme_endpoint.update_meme(meme_id, body, empty_auth_headers)
         actual_status = update_meme_endpoint.response.status_code
+        update_meme_endpoint.check_bad_request_401()
         print(f'Empty token test status code: {actual_status}')
 
 
@@ -631,7 +586,7 @@ def test_put_meme_with_bad_url(update_meme_endpoint, new_meme_id, new_token, mem
         # Обновляем мем с неправильным токеном
         update_meme_endpoint.update_meme(new_meme_id, invalid_url_body, headers)
         # Проверки с allure шагами. Может вернуть 400 или принять запрос - зависит от валидации API
-        update_meme_endpoint.check_negative_status(200)
+        update_meme_endpoint.check_response_status_is_200()
         print(f'Invalid URL test - Status: {update_meme_endpoint.response.status_code}')
 
 

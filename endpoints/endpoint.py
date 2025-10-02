@@ -36,7 +36,7 @@ class Endpoint:
 
 
     @allure.step('Check that 404 error received')
-    def check_bad_request_404(self):
+    def check_not_found_404(self):
         assert self.response.status_code == 404, f"Ожидался код 404, получен {self.response.status_code}"
 
 
