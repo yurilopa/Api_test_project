@@ -5,117 +5,38 @@ import allure
 # =============================================================================
 # POSITIVE AUTHORIZATION TESTS (изменяем значение имени)
 # =============================================================================
+@pytest.mark.parametrize("name,test_name,expected_status", [
+    ("ordinary", "ordinary_name", 200),
+    ("Very long name " * 100, "long_name", 200),
+    ("1234567890", "name_with_numbers", 200),
+    ("", "empty_text", 200),
+    ("!@#$%^&*()_+=~|{[]}'?/><`", "special_chars", 200),
+    ("Привет мир! 🚀", "unicode", 200),
+    ("'; DROP TABLE memes; --", "sql_injection", 200)
+])
 @allure.feature('Authorization')
 @allure.story('Get Authorization Token')
-@allure.title('Получение токена авторизации')
+@allure.title('Получение токена авторизации c разными параметрами в имени')
 @pytest.mark.smoke
-def test_create_token(create_token):
-    body = {"name": "Yuri Tester"}
-    headers = {'Content-Type': 'application/json'}
-    response = create_token.create_new_token(body=body, headers=headers)
-    print(f'Response status: {response.status_code}')
-    print(f'Response text: {response.text}')
-    # Проверка успешности запроса
-    create_token.check_response_status_is_200()
-    token = create_token.check_token_in_response()
-    print(f'Token received: {token}')
-
-
-@allure.feature('Authorization')
-@allure.story('Get Authorization Token')
-@allure.title('Получение токена авторизации с цифрами в имени')
-@pytest.mark.smoke
-def test_create_token_with_name_int(create_token):
-    body = {"name": "1234567890987654321"}
-    headers = {'Content-Type': 'application/json'}
-    response = create_token.create_new_token(body=body, headers=headers)
-    print(f'Response status: {response.status_code}')
-    print(f'Response text: {response.text}')
-    # Проверка успешности запроса
-    create_token.check_response_status_is_200()
-    token = create_token.check_token_in_response()
-    print(f'Token received: {token}')
-
-@allure.feature('Authorization')
-@allure.story('Get Authorization Token')
-@allure.title('Получение токена авторизация с 1 символом в имени')
-@pytest.mark.smoke
-def test_create_token_with_one_sim_in_name(create_token):
-    body = {"name": "1"}
-    headers = {'Content-Type': 'application/json'}
-    response = create_token.create_new_token(body=body, headers=headers)
-    print(f'Response status: {response.status_code}')
-    print(f'Response text: {response.text}')
-    # Проверка успешности запроса
-    create_token.check_response_status_is_200()
-    token = create_token.check_token_in_response()
-    print(f'Token received: {token}')
-
-
-# =============================================================================
-# BOUNDARY TESTS
-# =============================================================================
-@allure.feature('Authorization')
-@allure.story('Get Authorization Token')
-@allure.title('Получение токена авторизации с граничными значениями длины полей')
-@pytest.mark.medium
-def test_authorization_with_long_name(create_token):
-    print('Получение токена авторизации с граничными значениями длины полей')
-    long_username = 'long name' * 1000
-    body = {"name": long_username}
-    headers = {'Content-Type': 'application/json'}
-    response = create_token.create_new_token(body=body, headers=headers)
-    print(f'Response status: {response.status_code}')
-    print(f'Response text: {response.text}')
-    # Проверка успешности запроса
-    create_token.check_response_status_is_200()
-    token = create_token.check_token_in_response()
-    print(f'Token received: {token}')
-
-@allure.feature('Authorization')
-@allure.story('Get Authorization Token')
-@allure.title('Получение токена авторизации, спец символы в имени')
-@pytest.mark.smoke
-def test_create_token_with_spec_characters(create_token):
-    body = {"name": "!@#$%^&*"}
-    headers = {'Content-Type': 'application/json'}
-    response = create_token.create_new_token(body=body, headers=headers)
-    print(f'Response status: {response.status_code}')
-    print(f'Response text: {response.text}')
-    # Проверка успешности запроса
-    create_token.check_response_status_is_200()
-    token = create_token.check_token_in_response()
-    print(f'Token received: {token}')
-
-@allure.feature('Authorization')
-@allure.story('Get Authorization Token')
-@allure.title('Получение токена авторизации, пусто в имени')
-@pytest.mark.smoke
-def test_create_token_with_empty_name(create_token):
-    body = {"name": ""}
-    headers = {'Content-Type': 'application/json'}
-    response = create_token.create_new_token(body=body, headers=headers)
-    print(f'Response status: {response.status_code}')
-    print(f'Response text: {response.text}')
-    # Проверка успешности запроса
-    create_token.check_response_status_is_200()
-    token = create_token.check_token_in_response()
-    print(f'Token received: {token}')
-
-@allure.feature('Authorization')
-@allure.story('Get Authorization Token')
-@allure.title('Получение токена авторизации, пробел в имени')
-@pytest.mark.smoke
-def test_create_token_with_space_name(create_token):
-    body = {"name": " "}
-    headers = {'Content-Type': 'application/json'}
-    response = create_token.create_new_token(body=body, headers=headers)
-    print(f'Response status: {response.status_code}')
-    print(f'Response text: {response.text}')
-    # Проверка успешности запроса
-    create_token.check_response_status_is_200()
-    token = create_token.check_token_in_response()
-    print(f'Token received: {token}')
+def test_create_token_check_name(create_token, name, test_name, expected_status):
+    print(f'PUT запрос с {test_name}')
+    allure.dynamic.title(f'Создание токена с {test_name}')
+    with allure.step(f'Test PUT with {test_name}'):
+        body =  {"name": name}
+        headers = {'Content-Type': 'application/json'}
+        response = create_token.create_new_token(body=body, headers=headers)
+        print(f'Response status: {response.status_code}')
+        print(f'Response text: {response.text}')
+        # Проверяем статус
+        assert response.status_code == expected_status, f"Ожидался {expected_status}, получен {response.status_code}"
+        # Только для успешных запросов проверяем токен
+        if expected_status == 200:
+            # Проверка успешности запроса
+            token = create_token.check_token_in_response()
+            create_token.check_test_name(name, test_name)
+            print(f'Token received: {token}')
+        else:
+            print(f'Негативный тест прошёл: получен ожидаемый код {expected_status}')
 
 
 # =============================================================================
@@ -136,74 +57,38 @@ def test_create_token_with_empty_body(create_token):
 
 
 #NEGATIVE AUTHORIZATION TESTS (изменяем значение  в поле name)
+@pytest.mark.parametrize("field_name,test_field_name,expected_status", [
+    ("nam", "nam_in_field_name", 400),
+    (" ", "space_in_field_name", 400),
+    ("" , "empty_in_field_name", 400),
+    ("1234567890", "numbers_in_field_name", 400),
+    ("!@#$%^&*()_+=~|{[]}'?/><`", "special_chars_in_field_name", 400),
+    ("Привет мир! 🚀", "unicode_in_field_name", 400),
+    ("'; DROP TABLE memes; --", "sql_injection_in_field_name", 400)
+])
 @allure.feature('Authorization')
 @allure.story('Get Authorization Token')
-@allure.title('Получение токена авторизации с измененным полем name')
+@allure.title('Получение токена авторизации c разными параметрами в элементе имя')
 @pytest.mark.smoke
-def test_create_token_where_name_nam(create_token):
-    body = {"nam": "Yuri Tester"}
-    headers = {'Content-Type': 'application/json'}
-    response = create_token.create_new_token(body=body, headers=headers)
-    print(f'Response status: {response.status_code}')
-    print(f'Response text: {response.text}')
-    # Проверка успешности запроса
-    create_token.check_bad_request_400()
-
-
-@allure.feature('Authorization')
-@allure.story('Get Authorization Token')
-@allure.title('Получение токена авторизации с цифрами в имени')
-@pytest.mark.smoke
-def test_create_token_where_name_int(create_token):
-    body = {"1234567890987654321": "Yuri"}
-    headers = {'Content-Type': 'application/json'}
-    response = create_token.create_new_token(body=body, headers=headers)
-    print(f'Response status: {response.status_code}')
-    print(f'Response text: {response.text}')
-    # Проверка успешности запроса
-    create_token.check_bad_request_400()
-
-
-@allure.feature('Authorization')
-@allure.story('Get Authorization Token')
-@allure.title('Успешное получение токена авторизации спец символы в имени')
-@pytest.mark.smoke
-def test_create_token_where_spec_name(create_token):
-    body = {"@#$%^&*": "Yuri"}
-    headers = {'Content-Type': 'application/json'}
-    response = create_token.create_new_token(body=body, headers=headers)
-    print(f'Response status: {response.status_code}')
-    print(f'Response text: {response.text}')
-    # Проверка успешности запроса
-    create_token.check_bad_request_400()
-
-
-@allure.feature('Authorization')
-@allure.story('Get Authorization Token')
-@allure.title('Успешное получение токена авторизации пусто в имени')
-@pytest.mark.smoke
-def test_create_token_where_empty_name(create_token):
-    body = {"": "name"}
-    headers = {'Content-Type': 'application/json'}
-    response = create_token.create_new_token(body=body, headers=headers)
-    print(f'Response status: {response.status_code}')
-    print(f'Response text: {response.text}')
-    # Проверка успешности запроса
-    create_token.check_bad_request_400()
-
-
-@allure.feature('Authorization')
-@allure.story('Get Authorization Token')
-@allure.title('Успешное получение токена авторизации пробел в имени')
-@pytest.mark.smoke
-def test_create_token_where_space_in_name(create_token):
-    body = {" ": "name"}
-    headers = {'Content-Type': 'application/json'}
-    response = create_token.create_new_token(body=body, headers=headers)
-    print(f'Response status: {response.status_code}')
-    print(f'Response text: {response.text}')
-    # Проверка успешности запроса
-    create_token.check_bad_request_400()
+def test_create_token_check_field_name(create_token, field_name, test_field_name, expected_status):
+    print(f'PUT запрос с {test_field_name}')
+    allure.dynamic.title(f'Создание токена с {test_field_name}')
+    with allure.step(f'Test PUT with {test_field_name}'):
+        body =  {field_name: "name"}
+        headers = {'Content-Type': 'application/json'}
+        response = create_token.create_new_token(body=body, headers=headers)
+        print(f'Response status: {response.status_code}')
+        print(f'Response text: {response.text}')
+        # Проверяем статус
+        assert response.status_code == expected_status, f"Ожидался {expected_status}, получен {response.status_code}"
+        # Только для успешных запросов проверяем токен
+        if expected_status == 200:
+            # Проверка успешности запроса
+            token = create_token.check_token_in_response()
+            create_token.check_test_name(field_name, test_field_name)
+            print(f'Token received: {token}')
+        else:
+            print(f'Негативный тест прошёл: получен ожидаемый код {expected_status}')
 
 
 """запрос, с неправильным Content-Type"""
@@ -238,3 +123,38 @@ def test_put_meme_multipart_headers(create_token):  # get_meme_endpoint, update_
         print(f'Response text: {response.text}')
         # Проверка успешности запроса
         create_token.check_bad_request_500()
+
+
+@pytest.mark.parametrize("content_type,expected_status", [
+    ("application/json", 200),  # Правильный формат
+    ("multipart/form-data", 415),  # Неправильный формат - ожидаем 415
+    ("text/plain", 415),  # Другой неправильный формат
+    ("application/xml", 415),  # Ещё один неправильный формат
+])
+@allure.feature('Authorization')
+@allure.story('Content-Type validation')
+@allure.title('Проверка валидации Content-Type')
+def test_create_token_different_content_types(create_token, content_type, expected_status):
+    print(f'PUT запрос с Content-Type: {content_type}')
+    allure.dynamic.title(f'Создание токена с Content-Type: {content_type}')
+
+    with allure.step(f'Test PUT with Content-Type: {content_type}'):
+        body = {"name": "test_user"}
+        headers = {'Content-Type': content_type}
+
+        response = create_token.create_new_token(body=body, headers=headers)
+
+        print(f'Response status: {response.status_code}')
+        print(f'Response text: {response.text}')
+        print(f'Response headers: {response.headers}')
+
+        # Проверяем статус
+        assert response.status_code == expected_status, f"Ожидался {expected_status}, получен {response.status_code}"
+        # Только для успешных запросов проверяем токен
+        if expected_status == 200:
+            # Проверка успешности запроса
+            token = create_token.check_token_in_response()
+            create_token.check_test_headers(content_type)
+            print(f'Token received: {token}')
+        else:
+            print(f'Негативный тест прошёл: получен ожидаемый код {expected_status}')

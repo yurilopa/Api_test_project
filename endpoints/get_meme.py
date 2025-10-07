@@ -5,11 +5,17 @@ from test_api_fin_project.endpoints.endpoint import Endpoint
 
 class GetMeme(Endpoint):
     @allure.step('Get all meme')
-    def get_all_meme(self):
-        self.response = requests.get(f'{self.url}/meme')
+    def get_all_meme(self, headers=None):
+        self.response = requests.get(f'{self.url}/meme', headers=headers)
         print(f'GET response {self.response.status_code}')
         print(self.url)
         return self.response  # если потребуется вернуть данные json
+
+    @allure.step('Check memes list is not empty')
+    def check_memes_list_not_empty(self):
+        memes = self.response.json()
+        assert len(memes) > 0, "Список мемов пуст"
+        print(f"Получено мемов: {len(memes)}")
 
 
     @allure.step('Get one meme')
