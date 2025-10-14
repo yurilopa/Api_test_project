@@ -2,8 +2,7 @@ import pytest
 import allure
 import sys
 import os
-# Добавляем путь к корню проекта
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # путь к корню проекта
 from test_api_fin_project.endpoints.get_meme import (GetMeme)
 
 

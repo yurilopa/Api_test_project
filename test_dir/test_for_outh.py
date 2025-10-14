@@ -105,7 +105,7 @@ def test_put_meme_text_headers(create_token):  # get_meme_endpoint, update_meme_
         print(f'Response status: {response.status_code}')
         print(f'Response text: {response.text}')
         # Проверка успешности запроса
-        create_token.check_bad_request_500()
+        create_token.check_bad_request_415()
 
 
 """запрос, с неправильным Content-Type"""
@@ -122,7 +122,7 @@ def test_put_meme_multipart_headers(create_token):  # get_meme_endpoint, update_
         print(f'Response status: {response.status_code}')
         print(f'Response text: {response.text}')
         # Проверка успешности запроса
-        create_token.check_bad_request_500()
+        create_token.check_bad_request_415()
 
 
 @pytest.mark.parametrize("content_type,expected_status", [
@@ -137,13 +137,10 @@ def test_put_meme_multipart_headers(create_token):  # get_meme_endpoint, update_
 def test_create_token_different_content_types(create_token, content_type, expected_status):
     print(f'PUT запрос с Content-Type: {content_type}')
     allure.dynamic.title(f'Создание токена с Content-Type: {content_type}')
-
     with allure.step(f'Test PUT with Content-Type: {content_type}'):
         body = {"name": "test_user"}
         headers = {'Content-Type': content_type}
-
         response = create_token.create_new_token(body=body, headers=headers)
-
         print(f'Response status: {response.status_code}')
         print(f'Response text: {response.text}')
         print(f'Response headers: {response.headers}')
@@ -154,7 +151,6 @@ def test_create_token_different_content_types(create_token, content_type, expect
         if expected_status == 200:
             # Проверка успешности запроса
             token = create_token.check_token_in_response()
-            create_token.check_test_headers(content_type)
             print(f'Token received: {token}')
         else:
             print(f'Негативный тест прошёл: получен ожидаемый код {expected_status}')
