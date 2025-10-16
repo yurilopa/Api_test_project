@@ -48,8 +48,3 @@ class Endpoint:
     @allure.step('Check that 415 error received')
     def check_bad_request_415(self):
         assert self.response.status_code == 415, f"Ожидался код 415, получен {self.response.status_code}"
-
-
-    @allure.step('Check that 500 error received')
-    def check_bad_request_500(self):
-        assert self.response.status_code == 500, f"Ожидался код 500, получен {self.response.status_code}"

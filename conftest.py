@@ -57,11 +57,6 @@ def new_token():
     print(f'Created user with token: {token}')
     yield token
     print('test life token')  # Teardown - проверяем жизненный цикл токена
-    check_response = requests.get(f'http://memesapi.course.qa-practice.com/authorize/{token}')
-    if check_response.status_code == 200:
-        print('Token still exists and valid')
-    else:
-        print(f'Token check failed with status: {check_response.status_code}')
 
 
 """Создаем новый мем и отдаем его ID для тестов в папке test_dir"""
@@ -86,15 +81,6 @@ def new_meme_id(new_token):
     print(f'Created meme with id: {meme_id}')
     yield meme_id
     print(f'Meme {meme_id} lifecycle finished')
-    delete_endpoint = DeleteMeme()
-    delete_endpoint.meme_id = meme_id
-    delete_response = delete_endpoint.delete_meme(meme_id, headers)
-    if delete_response.status_code == 200:
-        print(f'Object {meme_id} successfully deleted')
-    elif delete_response.status_code == 404:
-        print(f'Object {meme_id} deleted in test')
-    else:
-        print(f'Unexpected status code deletion {delete_response.status_code}')
 
 
 """Тестовые данные пользователя"""

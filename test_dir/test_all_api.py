@@ -2,8 +2,7 @@ import pytest
 import allure
 import sys
 import os
-# Добавляем путь к корню проекта
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # путь к корню проекта
 from test_api_fin_project.endpoints.get_meme import (GetMeme)
 
 
@@ -20,14 +19,13 @@ def start_testing():
 @allure.story('Get memes')
 @allure.title('Получение всех мемов')
 @pytest.mark.smoke
-def test_get_all_memes(get_meme_endpoint, new_meme_id, new_token):
+def test_get_all_memes(get_meme_endpoint, new_token):
     print('Тест получения всех мемов')
     print(f'Using token: {new_token}')
-    meme_id = new_meme_id
     headers = {'Authorization': new_token}
-    get_meme_endpoint.get_meme(meme_id, headers)
+    get_meme_endpoint.get_all_meme(headers)
     get_meme_endpoint.check_response_status_is_200()
-    get_meme_endpoint.check_meme_id(new_meme_id)
+    get_meme_endpoint.check_memes_list_not_empty()
 
 
 """Получаем существующий мем по ID который создан в файле conftest.py лежащий в папке, на папку выше"""
@@ -42,6 +40,7 @@ def test_get_one_meme(get_meme_endpoint, new_meme_id, new_token):
     get_meme_endpoint.get_meme(meme_id, headers)
     get_meme_endpoint.check_response_status_is_200()
     get_meme_endpoint.check_meme_id(new_meme_id)
+    get_meme_endpoint.check_memes_list_not_empty()
 
 
 # =============================================================================
@@ -66,58 +65,30 @@ def test_get_meme_non_existent_id(get_meme_endpoint, new_token):
         print(f'Non existent id test - Status: {get_meme_endpoint.response.status_code}')
 
 
-"""Тест получения мема с неправильным токеном - должен вернуть 401"""
+@pytest.mark.parametrize("token, test_name, expected_status", [
+    ("Very long token " * 100, "long_text", 401),
+    ("", "empty_token", 401),
+    ("bad_token_123", "invalid_auth_headers_token", 401),
+    ("!@#$%^&*()_+=~|{[]}'?/><`", "special_chars", 401),
+    ("'; DROP TABLE memes; --", "sql_injection", 401),
+    (None, "no_auth_headers_token", 401)
+])
 @allure.feature('Memes')
 @allure.story('Get memes')
-@allure.title('Обновление мема негативный тест')
 @pytest.mark.medium
-def test_get_meme_invalid_token(get_meme_endpoint, new_meme_id):
-    meme_id = new_meme_id
-    with allure.step('Test GET with invalid token'):
-        print(f'Тест получения мема c неправильным токеном')
-        bad_headers = {'Authorization': 'bad_token_123', 'Content-Type': 'application/json'}
+def test_get_meme_check_token(get_meme_endpoint, new_meme_id, token, test_name, expected_status):
+    print(f'Get запрос с {test_name}')
+    allure.dynamic.title(f'Get запрос с {test_name}')
+    with allure.step(f'Test Get with {test_name}'):
+        meme_id = new_meme_id
+        headers = {'Authorization': token, 'Content-Type': 'application/json'}
         # Получаем мем
-        get_one_meme = GetMeme()
-        get_one_meme.get_meme(meme_id, bad_headers)
-
-        # Проверки с allure шагами
-        get_one_meme.check_bad_request_401()
-        print(f'Invalid token status test - Status: {get_one_meme.response.status_code}')
-
-
-"""Тест получения мема без токена - должен вернуть 401"""
-@allure.feature('Memes')
-@allure.story('Get memes')
-@allure.title('GET запрос без токена авторизации')
-@pytest.mark.medium
-def test_get_meme_no_token(get_meme_endpoint, new_meme_id):
-    meme_id = new_meme_id
-    with allure.step('Test GET without authorization token'):
-        print(f'Тест получения мема без token')
-        no_auth_headers = {'Content-Type': 'application/json'}
-        # Получаем мем
-        get_meme_endpoint.get_meme(meme_id, no_auth_headers)
+        get_meme_endpoint.get_meme(meme_id, headers)
 
         # Проверки с allure шагами
         get_meme_endpoint.check_bad_request_401()
-        print(f'No token status test - Status: {get_meme_endpoint.response.status_code}')
+        print(f'{test_name} status test - Status: {get_meme_endpoint.response.status_code}')
 
-
-"""Тест получения мема с пустым токеном - может вернуть 400/401/500"""
-@allure.feature('Memes')
-@allure.story('Get memes')
-@allure.title('GET запрос с пустым токеном авторизации')
-@pytest.mark.medium
-def test_get_meme_empty_token(get_meme_endpoint, new_meme_id):
-    meme_id = new_meme_id
-    with (allure.step('Test GET with empty token')):
-        empty_auth_headers = {'Authorization': '', 'Content-Type': 'application/json'}
-        # Получаем мем
-        get_meme_endpoint.get_meme(meme_id, empty_auth_headers)
-
-        # Проверки с allure шагами
-        get_meme_endpoint.check_bad_request_401()
-        print(f'No token status test - Status: {get_meme_endpoint.response.status_code}')
 
 # =============================================================================
 # PUT TESTS
@@ -182,118 +153,80 @@ def test_put_basic_change_meme(update_meme_endpoint, new_meme_id, new_token):
         update_meme_endpoint.check_response_tags(["updated", "test", "automation"], meme_id)
 
 
-"""Тест обновления только текстового поля через PUT"""
-@allure.feature('Meme')
-@allure.story('Manipulate meme')
-@allure.title('Обновление объекта меняем текст в меме')
-@pytest.mark.medium
-def test_change_text_only_meme(update_meme_endpoint, new_meme_id, new_token):
-    print('PUT запрос обновления поля текст в меме')
-    with allure.step('Test PUT test change only text'):
-        meme_id = new_meme_id
-        print('Тест обновления текстового поля мема через (PUT)')
-        headers = {'Authorization': new_token, 'Content-Type': 'application/json'}
-        text = 'update text'
-        # В теле запроса, меняем только текст
-        body = {
-            'id': new_meme_id,
-            'text': text,
-            'url': 'https://opis-cdn.tinkoffjournal.ru/mercury/03-fav-memes-2025.jpg',
-            "tags": ["updated", "test", "automation"],
-            "info": {"colors": ["black", "white"], 'updated': True},
-            'updated_by': 'Yuri tester'
-        }
-        # Обновляем мем
-        update_meme_endpoint.update_meme(meme_id, body, headers)
-        # Проверки с allure шагами
-        update_meme_endpoint.check_response_status_is_200()
-        update_meme_endpoint.check_text_only_updated(text, meme_id)
-
-
-"""Тест обновления URL через PUT"""
-@allure.feature('Meme')
-@allure.story('Manipulate meme')
-@allure.title('Обновление объекта изменяем поле url')
-@pytest.mark.medium
-def test_change_url_only_meme(update_meme_endpoint, new_meme_id, new_token):
-    print('PUT запрос обновления поля url в меме')
-    with allure.step('Test PUT test change only url'):
-        meme_id = new_meme_id
-        print('Тест обновления поля url мема через (PUT)')
-        headers = {'Authorization': new_token, 'Content-Type': 'application/json'}
-        # В теле запроса изменяем только url
-        new_url = 'https://img.championat.com/i/f/f/17452621031297116737.jpg'
-        body = {
-            'id': new_meme_id,
-            'text': "Meme with new image",
-            'url': new_url,
-            "tags": ["updated", "test", "automation"],
-            "info": {"format": ["link", "txt"], 'image_changed': True},
-            'updated_by': 'Yuri tester'
-        }
-        # Обновляем мем
-        update_meme_endpoint.update_meme(meme_id, body, headers)
-        # Проверки с allure шагами
-        update_meme_endpoint.check_response_status_is_200()
-        update_meme_endpoint.check_url_only_updated(new_url, meme_id)
-
-
-"""Тест обновления tags через PUT"""
-@allure.feature('Meme')
-@allure.story('Manipulate meme')
-@allure.title('Обновление мема изменяем поле тэги')
-@pytest.mark.medium
-def test_change_tag_only_meme(update_meme_endpoint, new_meme_id, new_token):
-    print('PUT запрос обновления поля теги в меме')
-    with allure.step('Test PUT test change only tags'):
-        meme_id = new_meme_id
-        headers = {'Authorization': new_token, 'Content-Type': 'application/json'}
-        # В данных для обновления, меняем только tags
-        new_tags = ['update', 'tests']
-        body = {
-            'id': new_meme_id,
-            'text': "Meme with new tags",
-            'url': 'https://opis-cdn.tinkoffjournal.ru/mercury/03-fav-memes-2025.jpg',
-            "tags": new_tags,
-            "info": {"format": ["link", "txt"], 'tags changed': True},
-            'updated_by': 'Yuri tester'
-        }
-        # Обновляем мем
-        update_meme_endpoint.update_meme(meme_id, body, headers)
-        # Проверки с allure шагами
-        update_meme_endpoint.check_response_status_is_200()
-        update_meme_endpoint.check_tags_only_updated(new_tags, meme_id)
-
-
-"""Тест обновления info через PUT"""
+"""Тест обновления через PUT"""
 @allure.feature('Meme')
 @allure.story('Manipulate meme')
 @allure.title('Обновление мема изменяем поле инфо')
 @pytest.mark.medium
-def test_change_info_only_meme(update_meme_endpoint, new_meme_id, new_token):
-    print('PUT запрос обновления поля инфо в меме')
-    with allure.step('Test PUT test change only info'):
-        meme_id = new_meme_id
+@pytest.mark.parametrize("test_name, body, check_method, expected_value",[(
+        # Тест-кейс 1: Обновление только текста
+                "Обновление только текста мема",
+                {
+                    'text': 'update text',
+                    'url': 'https://opis-cdn.tinkoffjournal.ru/mercury/03-fav-memes-2025.jpg',
+                    "tags": ["updated", "test", "automation"],
+                    "info": {"colors": ["black", "white"], 'updated': True},
+                    'updated_by': 'Yuri tester'
+                },
+                'check_text_only_updated',
+                'update text'
+        ),
+        # Тест-кейс 2: Обновление только URL
+        (
+                "Обновление только URL мема",
+                {
+                    'text': 'text',
+                    'url': 'https://img.championat.com/i/f/f/17452621031297116737.jpg',
+                    "tags": ["updated", "test", "automation"],
+                    "info": {"colors": ["black", "white"], 'updated': True},
+                    'updated_by': 'Yuri tester'
+                },
+                'check_url_only_updated',
+                'https://img.championat.com/i/f/f/17452621031297116737.jpg'
+        ),
+        # Тест-кейс 3: Обновление только tags
+        (
+                "Обновление только tags мема",
+                {
+                    'text': 'text',
+                    'url': 'https://opis-cdn.tinkoffjournal.ru/mercury/03-fav-memes-2025.jpg',
+                    "tags": ['update', 'tests'],
+                    "info": {"colors": ["black", "white"], 'updated': True},
+                    'updated_by': 'Yuri tester'
+                },
+                'check_tags_only_updated',
+                ['update', 'tests']
+        ),
+        # Тест-кейс 4: Обновление только info
+        (
+                "Обновление только info мема",
+                {
+                    'text': 'text',
+                    'url': 'https://opis-cdn.tinkoffjournal.ru/mercury/03-fav-memes-2025.jpg',
+                    "tags": ['update', 'tests'],
+                    "info": {"colors": ["silver", "yellow"], 'updated': True},
+                    'updated_by': 'Yuri tester'
+                },
+                'check_info_only_updated',
+                {"colors": ["silver", "yellow"], 'updated': True}
+        )
+    ]
+)
+def test_update_single_field_meme(
+        update_meme_endpoint, new_meme_id, new_token, test_name, body, check_method, expected_value
+):
+    with allure.step(f'Test PUT with {test_name}'):
+        allure.dynamic.title(test_name)
+        print(f'PUT запрос с {test_name}')
+        body['id'] = new_meme_id
         headers = {'Authorization': new_token, 'Content-Type': 'application/json'}
-        # Берем оригинальную структуру и меняем только поле info
-        new_info = {"colors": ["white", "grey"],
-                        'rating': 9.5,
-                        'viral': True,
-                        'metadata': {'create data': 2019-10-16, 'author': 'Котизм'}
-                        }
-        body = {
-            'id': new_meme_id,
-            'text': "Meme with new info",
-            'url': 'https://opis-cdn.tinkoffjournal.ru/mercury/03-fav-memes-2025.jpg',
-            "tags": ["updated", "test", "automation"],
-            "info": new_info,
-            'updated_by': 'Yuri tester'
-        }
+
         # Обновляем мем
-        update_meme_endpoint.update_meme(meme_id, body, headers)
+        update_meme_endpoint.update_meme(new_meme_id, body, headers)
         # Проверки с allure шагами
         update_meme_endpoint.check_response_status_is_200()
-        update_meme_endpoint.check_info_only_updated(new_info, meme_id)
+        check_function = getattr(update_meme_endpoint, check_method)
+        check_function(expected_value, new_meme_id)
 
 
 # =============================================================================
@@ -358,7 +291,6 @@ def test_put_meme_many_tags(update_meme_endpoint, new_meme_id, new_token):
         print(f'Test PUT with many tags - Status: {update_meme_endpoint.response.status_code}')
 
 
-
 """Тест PUT запрос, в котором много инфо в тесте"""
 @allure.feature('Memes')
 @allure.story('Manipulate memes')
@@ -384,6 +316,31 @@ def test_put_meme_many_info(update_meme_endpoint, new_meme_id, new_token):
         update_meme_endpoint.check_response_status_is_200()
         update_meme_endpoint.check_test_with_many_info(many_info)
         print(f'Test PUT with many_info - Status: {update_meme_endpoint.response.status_code}')
+
+        """Негативный тест с невалидным URL"""
+
+@allure.feature('Memes')
+@allure.story('Manipulate memes')
+@allure.title('PUT запрос с невалидным URL')
+@pytest.mark.medium
+def test_put_meme_with_bad_url(update_meme_endpoint, new_meme_id, new_token, meme_data):
+    print('PUT запрос с невалидным URL')
+    with allure.step('Test PUT with invalid URL'):
+        meme_id = new_meme_id
+        headers = {'Authorization': new_token, 'Content-Type': 'application/json'}
+        invalid_url_body = {
+            'id': meme_id,
+            'text': "Test with invalid URL",
+            'url': 'invalid-url-format',  # Невалидный URL
+            "tags": ["invalid", "url", "test"],
+            "info": {"url_valid": False},
+            'updated_by': 'URL Tester'
+        }
+        # Обновляем мем с неправильным токеном
+        update_meme_endpoint.update_meme(new_meme_id, invalid_url_body, headers)
+        # Проверки с allure шагами. Может вернуть 400 или принять запрос - зависит от валидации API
+        update_meme_endpoint.check_response_status_is_200()
+        print(f'Invalid URL test - Status: {update_meme_endpoint.response.status_code}')
 
 
 """Тест PUT запрос, с неправильным Content-Type"""
@@ -563,31 +520,6 @@ def test_put_meme_with_outh_token(update_meme_endpoint, new_meme_id, new_token, 
         update_meme_endpoint.check_bad_request_401()
         update_meme_endpoint.check_response_text('Unauthorized')
         print(f'Invalid token status test - Status: {update_meme_endpoint.response.status_code}')
-
-
-"""Негативный тест с невалидным URL"""
-@allure.feature('Memes')
-@allure.story('Manipulate memes')
-@allure.title('PUT запрос с невалидным URL')
-@pytest.mark.medium
-def test_put_meme_with_bad_url(update_meme_endpoint, new_meme_id, new_token, meme_data):
-    print('PUT запрос с невалидным URL')
-    with allure.step('Test PUT with invalid URL'):
-        meme_id = new_meme_id
-        headers = {'Authorization': new_token, 'Content-Type': 'application/json'}
-        invalid_url_body = {
-            'id': meme_id,
-            'text': "Test with invalid URL",
-            'url': 'invalid-url-format',  # Невалидный URL
-            "tags": ["invalid", "url", "test"],
-            "info": {"url_valid": False},
-            'updated_by': 'URL Tester'
-        }
-        # Обновляем мем с неправильным токеном
-        update_meme_endpoint.update_meme(new_meme_id, invalid_url_body, headers)
-        # Проверки с allure шагами. Может вернуть 400 или принять запрос - зависит от валидации API
-        update_meme_endpoint.check_response_status_is_200()
-        print(f'Invalid URL test - Status: {update_meme_endpoint.response.status_code}')
 
 
 """Негативный тест без авторизации"""
