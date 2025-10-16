@@ -65,58 +65,30 @@ def test_get_meme_non_existent_id(get_meme_endpoint, new_token):
         print(f'Non existent id test - Status: {get_meme_endpoint.response.status_code}')
 
 
-"""Тест получения мема с неправильным токеном - должен вернуть 401"""
+@pytest.mark.parametrize("token, test_name, expected_status", [
+    ("Very long token " * 100, "long_text", 401),
+    ("", "empty_token", 401),
+    ("bad_token_123", "invalid_auth_headers_token", 401),
+    ("!@#$%^&*()_+=~|{[]}'?/><`", "special_chars", 401),
+    ("'; DROP TABLE memes; --", "sql_injection", 401),
+    (None, "no_auth_headers_token", 401)
+])
 @allure.feature('Memes')
 @allure.story('Get memes')
-@allure.title('Обновление мема негативный тест')
 @pytest.mark.medium
-def test_get_meme_invalid_token(get_meme_endpoint, new_meme_id):
-    meme_id = new_meme_id
-    with allure.step('Test GET with invalid token'):
-        print(f'Тест получения мема c неправильным токеном')
-        bad_headers = {'Authorization': 'bad_token_123', 'Content-Type': 'application/json'}
+def test_get_meme_check_token(get_meme_endpoint, new_meme_id, token, test_name, expected_status):
+    print(f'Get запрос с {test_name}')
+    allure.dynamic.title(f'Get запрос с {test_name}')
+    with allure.step(f'Test Get with {test_name}'):
+        meme_id = new_meme_id
+        headers = {'Authorization': token, 'Content-Type': 'application/json'}
         # Получаем мем
-        get_one_meme = GetMeme()
-        get_one_meme.get_meme(meme_id, bad_headers)
-
-        # Проверки с allure шагами
-        get_one_meme.check_bad_request_401()
-        print(f'Invalid token status test - Status: {get_one_meme.response.status_code}')
-
-
-"""Тест получения мема без токена - должен вернуть 401"""
-@allure.feature('Memes')
-@allure.story('Get memes')
-@allure.title('GET запрос без токена авторизации')
-@pytest.mark.medium
-def test_get_meme_no_token(get_meme_endpoint, new_meme_id):
-    meme_id = new_meme_id
-    with allure.step('Test GET without authorization token'):
-        print(f'Тест получения мема без token')
-        no_auth_headers = {'Content-Type': 'application/json'}
-        # Получаем мем
-        get_meme_endpoint.get_meme(meme_id, no_auth_headers)
+        get_meme_endpoint.get_meme(meme_id, headers)
 
         # Проверки с allure шагами
         get_meme_endpoint.check_bad_request_401()
-        print(f'No token status test - Status: {get_meme_endpoint.response.status_code}')
+        print(f'{test_name} status test - Status: {get_meme_endpoint.response.status_code}')
 
-
-"""Тест получения мема с пустым токеном - может вернуть 400/401/500"""
-@allure.feature('Memes')
-@allure.story('Get memes')
-@allure.title('GET запрос с пустым токеном авторизации')
-@pytest.mark.medium
-def test_get_meme_empty_token(get_meme_endpoint, new_meme_id):
-    meme_id = new_meme_id
-    with (allure.step('Test GET with empty token')):
-        empty_auth_headers = {'Authorization': '', 'Content-Type': 'application/json'}
-        # Получаем мем
-        get_meme_endpoint.get_meme(meme_id, empty_auth_headers)
-
-        # Проверки с allure шагами
-        get_meme_endpoint.check_bad_request_401()
-        print(f'No token status test - Status: {get_meme_endpoint.response.status_code}')
 
 # =============================================================================
 # PUT TESTS
