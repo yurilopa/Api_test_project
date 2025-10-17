@@ -6,10 +6,32 @@ from test_api_fin_project.endpoints.get_meme import (GetMeme)
 
 """
     Тест проверяет:
-    1. Мем существует до удаления
-    2. Удаление выполняется успешно (200 OK)
-    3. Мема больше нет в системе после удаления (404 Not Found)
-    4. Попытка повторного удаления уже удаленного на 2 шаге мема
+    1. Удаление выполняется успешно (200 OK)
+    2. Мема больше нет в системе после удаления (404 Not Found)
+"""
+@allure.feature('Memes')
+@allure.story('Manipulate meme')
+@allure.title('Удаление мема')
+def test_delete(delete_meme_endpoint, new_meme_id, new_token):
+    meme_id = new_meme_id
+    print(f'Тест удаления объекта: {meme_id}')
+    headers = {'Authorization': new_token}
+    # Шаг 1 удаление
+    delete_meme = DeleteMeme()
+    delete_meme.delete_meme(meme_id, headers)
+    delete_meme.check_response_status_is_200()
+    # Шаг 2: ПРОВЕРЯЕМ что удалён
+    get_meme_check = GetMeme()
+    get_meme_check.get_meme(meme_id, headers)
+    get_meme_check.check_not_found_404()
+    print(f'✓ Мем {meme_id} не найден - удаление подтверждено')
+
+
+"""
+    Тест проверяет:
+    1. Удаление выполняется успешно (200 OK)
+    2. Мема больше нет в системе после удаления (404 Not Found)
+    3. Попытка повторного удаления уже удаленного на 2 шаге мема
 """
 @allure.feature('Memes')
 @allure.story('Manipulate meme')
@@ -28,13 +50,7 @@ def test_delete(delete_meme_endpoint, new_meme_id, new_token):
     delete_meme = DeleteMeme()
     delete_meme.delete_meme(meme_id, headers)
     delete_meme.check_response_status_is_200()
-    # Шаг 3: ПРОВЕРЯЕМ что удалён
-    get_meme_check = GetMeme()
-    get_meme_check.get_meme(meme_id, headers)
-    get_meme_check.check_not_found_404()
-    print(f'✓ Мем {meme_id} не найден - удаление подтверждено')
-
-    # Попытка повторного удаления
+    # 3 Попытка повторного удаления
     with allure.step('Попытка повторного удаления'):
         delete_meme_again = DeleteMeme()
         delete_meme_again.delete_meme(meme_id, headers)
