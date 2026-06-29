@@ -1,8 +1,8 @@
 import requests
 import allure
 from requests import JSONDecodeError
-from test_api_fin_project.endpoints.endpoint import Endpoint
-from test_api_fin_project.endpoints.get_meme import GetMeme  # Импортируем существующий класс
+from endpoints.endpoint import Endpoint
+from endpoints.get_meme import GetMeme  # Импортируем существующий класс
 
 
 class UpdateMeme(Endpoint):
