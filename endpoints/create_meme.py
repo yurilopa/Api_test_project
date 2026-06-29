@@ -1,7 +1,6 @@
 import requests
 import allure
-from test_api_fin_project.endpoints.endpoint import Endpoint
-
+from endpoints.endpoint import Endpoint
 
 class CreateMeme(Endpoint):
     @allure.step('Creating meme')
