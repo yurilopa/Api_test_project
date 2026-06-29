@@ -1,7 +1,7 @@
 import allure
 import pytest
-from test_api_fin_project.endpoints.delete_meme import (DeleteMeme)
-from test_api_fin_project.endpoints.get_meme import (GetMeme)
+from endpoints.delete_meme import (DeleteMeme)
+from endpoints.get_meme import (GetMeme)
 
 
 """
